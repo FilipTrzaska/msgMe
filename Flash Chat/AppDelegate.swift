@@ -1,13 +1,4 @@
-//
-//  AppDelegate.swift
-//  Flash Chat
-//
-//  The App Delegate listens for events from the system. 
-//  It recieves application level messages like did the app finish launching or did it terminate etc. 
-//
-
 import UIKit
-
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
