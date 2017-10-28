@@ -3,7 +3,7 @@ import Firebase
 
 class ChatViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
     
-    // Declare instance variables here
+    var messageArray : [Message] = [Message]()
 
     @IBOutlet var heightConstraint: NSLayoutConstraint!
     @IBOutlet var sendButton: UIButton!
@@ -20,13 +20,14 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
         messageTextfield.delegate = self
         
         
-        //TODO: Set the tapGesture here:
-        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tableViewTapped))
+        messageTableView.addGestureRecognizer(tapGesture)
         
 
         messageTableView.register(UINib(nibName: "MessageCell", bundle: nil), forCellReuseIdentifier: "customMessageCell")
         
         configureTableView()
+        retriveMessages()
     }
 
     ///////////////////////////////////////////
@@ -52,7 +53,9 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     
-    //TODO: Declare tableViewTapped here:
+    @objc func tableViewTapped() {
+        messageTextfield.endEditing(true)
+    }
     
     
     
@@ -69,18 +72,19 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
 
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        heightConstraint.constant = 308
-        view.layoutIfNeeded()
-        
-        UIView.animate(withDuration: 0.7, animations: {
-            
+        UIView.animate(withDuration: 0.5, animations: {
+            self.heightConstraint.constant = 308
+            self.view.layoutIfNeeded()
         })
     }
     
     
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        
+        UIView.animate(withDuration: 0.5, animations: {
+            self.heightConstraint.constant = 50
+            self.view.layoutIfNeeded()
+        })
     }
 
     
@@ -95,13 +99,49 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     @IBAction func sendPressed(_ sender: AnyObject) {
         
+        messageTextfield.endEditing(true)
         
-        //TODO: Send the message to Firebase and save it in our database
+        messageTextfield.isEnabled = false
+        sendButton.isEnabled = false
         
+        let messagesDB = Database.database().reference().child("Messages")
+        
+        let messageDictionary = ["Sender": Auth.auth().currentUser?.email, "MessageBody": messageTextfield.text!]
+        
+        messagesDB.childByAutoId().setValue(messageDictionary){
+            (error, reference) in
+            
+            if error != nil {
+                print(error!)
+            } else {
+                print("Message saved.")
+                
+                self.messageTextfield.isEnabled = true
+                self.sendButton.isEnabled = true
+                
+                self.messageTextfield.text = ""
+            }
+        }
         
     }
     
-    //TODO: Create the retrieveMessages method here:
+    func retriveMessages() {
+        let messageDB = Database.database().reference().child("Messages")
+        
+        messageDB.observe(.childAdded, with: { (snapshot) in
+            
+            let snapshotValue = snapshot.value as! Dictionary<String, String>
+            
+            let text = snapshotValue["MessageBody"]!
+            let sender = snapshotValue["Sender"]!
+            
+            let message = Message()
+            message.messageBody = text
+            message.sender = sender
+            
+            self.messageArray.append(message)
+        })
+    }
     
     
 
